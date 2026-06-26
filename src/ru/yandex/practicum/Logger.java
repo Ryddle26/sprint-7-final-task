@@ -4,7 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class Logger {
+public class Logger implements AutoCloseable {
     private final PrintWriter writer;
 
     public Logger(String fileName) throws IOException {
@@ -15,6 +15,7 @@ public class Logger {
         writer.println(message);
     }
 
+    @Override
     public void close() {
         writer.close();
     }

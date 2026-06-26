@@ -7,6 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
     public class WordleDictionaryLoader {
+        private final Logger logger;
+
+        public WordleDictionaryLoader(Logger logger) {
+            this.logger = logger;
+        }
 
         List<String> list = new ArrayList<>();
 
@@ -17,7 +22,7 @@ import java.util.List;
                     list.add(line);
                 }
             } catch (IOException e) {
-                System.err.println("Ошибка при загрузке словаря" + e.getMessage());
+                logger.log("Ошибка при загрузке словаря" + e.getMessage());
             }
         }
 

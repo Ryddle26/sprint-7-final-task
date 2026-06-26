@@ -1,6 +1,6 @@
 package ru.yandex.practicum;
 
-import org.junit.jupiter.api.BeforeAll;
+import exceptions.WordNotFoundInDictionaryException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,8 +16,8 @@ class WordleTest {
     private WordleGame game;
     private Logger logger;
 
-    @BeforeAll
-    static void setUpDictionary() {
+    @BeforeEach
+    void setUpDictionary() {
         list = new ArrayList<>();
         list.add("трамвайщик");
         list.add("кошка");
@@ -58,26 +58,133 @@ class WordleTest {
 
     @Test
     void testCheckCorrectWord() {
-        game.setAnswer("кошка");
-        String result = game.checkWord("кошка");
-        assertEquals("+++++", result);
+        try {
+            game.setAnswer("кошка");
+            String result = game.checkWord("кошка");
+            assertEquals("+++++", result);
+        } catch (WordNotFoundInDictionaryException e) {
+            fail("Не должно было возникнуть исключение: " + e.getMessage());
+        }
     }
 
     @Test
     void testCheckIncorrectWord() {
-        game.setAnswer("канал");
-        String result = game.checkWord("кошка");
-        assertEquals("+---^", result);
+        try {
+            game.setAnswer("канал");
+            String result = game.checkWord("кошка");
+            assertEquals("+---^", result);
 
-        result = game.checkWord("нерпа");
-        assertEquals("^---^", result);
+            result = game.checkWord("нерпа");
+            assertEquals("^---^", result);
+        } catch (WordNotFoundInDictionaryException e) {
+            fail("Не должно было возникнуть исключение: " + e.getMessage());
+        }
     }
 
     @Test
-    void testGetHint() {
-        game.checkWord("кошка");
+    void testGetFirstHint() {
+        try {
+            game.checkWord("кошка");
+            String hint = game.getHint();
+            assertNotNull(hint);
+            assertEquals(5, hint.length());
+        } catch (WordNotFoundInDictionaryException e) {
+            fail("Не должно было возникнуть исключение: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testEmptyDictionary() {
+        WordleDictionary emptyDictionary = new WordleDictionary(new ArrayList<>());
+        WordleGame game = new WordleGame(emptyDictionary, logger);
+
+        assertNull(game.getAnswer());
+    }
+
+    @Test
+    void testDuplicateLetters1() throws Exception {
+        dictionary.getWords().add("банан");
+        dictionary.getWords().add("канал");
+
+        game.setAnswer("банан");
+
+        String result = game.checkWord("канал");
+
+        assertEquals("-+++-", result);
+    }
+
+    @Test
+    void testDuplicateLetters2() throws WordNotFoundInDictionaryException {
+        dictionary.getWords().add("масса");
+        dictionary.getWords().add("самса");
+
+        game.setAnswer("масса");
+
+        String result = game.checkWord("самса");
+
+        assertEquals("^+^++", result);
+    }
+
+    @Test
+    void testOnlyOneDuplicateLetterMarked() throws Exception {
+        dictionary.getWords().add("лимон");
+        dictionary.getWords().add("ооооо");
+
+        game.setAnswer("лимон");
+
+        String result = game.checkWord("ооооо");
+
+        assertEquals("---+-", result);
+    }
+
+    @Test
+    void testStepsDecrease() {
+        try {
+            game.setAnswer("кошка");
+            game.checkWord("кошка");
+
+            assertEquals(5, game.getStepsLeft());
+        } catch (WordNotFoundInDictionaryException e) {
+            fail("Ожидалось, что попыток останется 5");
+        }
+    }
+
+    @Test
+    void testHintWithoutAttempts() {
         String hint = game.getHint();
+
         assertNotNull(hint);
-        assertEquals(5, hint.length());
+        assertTrue(dictionary.getWords().contains(hint));
+    }
+
+    @Test
+    void testSecondHint() {
+        String first = game.getHint();
+        System.out.println("Первый вызов: " + first);
+        String second = game.getHint();
+        System.out.println("Второй вызов: " + second);
+        assertEquals("Подсказка уже выдавалась", second);
+    }
+
+    @Test
+    public void testHintGiven() {
+        String firstHint = game.getHint();
+        assertNotNull(firstHint);
+        assertNotEquals("Подсказка уже выдавалась", firstHint);
+
+        String secondHint = game.getHint();
+        assertEquals("Подсказка уже выдавалась", secondHint);
+    }
+
+    @Test
+    void testWordNotFoundException() {
+        try {
+            game.setAnswer("кошка");
+            game.checkWord("домик");
+
+            fail("Ожидалось исключение");
+        } catch (WordNotFoundInDictionaryException e) {
+            assertNotNull(e.getMessage());
+        }
     }
 }

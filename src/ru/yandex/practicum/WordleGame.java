@@ -1,5 +1,6 @@
 package ru.yandex.practicum;
 
+import exceptions.DictionaryIsEmptyException;
 import exceptions.NoHintAvailableException;
 import exceptions.WordNotFoundInDictionaryException;
 
@@ -12,22 +13,31 @@ public class WordleGame {
     private WordleDictionary dictionary;
     private List<String> attempts;
     private List<String> hintResults;
-    private static final int MAX_STEPS = 5;
+    private static final int MAX_STEPS = 6;
     private Logger logger;
+    private boolean hintGiven = false;
 
     public WordleGame(WordleDictionary dictionary, Logger logger) {
         this.dictionary = dictionary;
-        this.answer = getRandomWord();
         this.steps = 0;
         this.attempts = new ArrayList<>();
         this.hintResults = new ArrayList<>();
         this.logger = logger;
+
+        try {
+            this.answer = getRandomWord();
+        } catch (DictionaryIsEmptyException e) {
+            logger.log(e.getMessage());
+        }
     }
 
     public String getRandomWord() {
         Random random;
         int index;
         try {
+            if (dictionary.getWords().isEmpty()) {
+                throw new DictionaryIsEmptyException("Словарь пуст");
+            }
             random = new Random();
             index = random.nextInt(this.dictionary.getWords().size());
 
@@ -38,7 +48,7 @@ public class WordleGame {
         return this.dictionary.getWords().get(index);
     }
 
-    public String checkWord(String userInput) {
+    public String checkWord(String userInput) throws WordNotFoundInDictionaryException {
         if (!this.dictionary.getWords().contains(userInput)) {
             throw new WordNotFoundInDictionaryException(userInput);
         }
@@ -79,11 +89,17 @@ public class WordleGame {
     }
 
     public String getHint() {
+        System.out.println("hintGiven перед проверкой: " + hintGiven);
+        if (hintGiven) {
+            return "Подсказка уже выдавалась";
+        }
+
         List<String> allWords = dictionary.getWords();
         Random random = new Random();
         List<String> possibleWords = new ArrayList<>();
 
         if (attempts.isEmpty()) {
+            hintGiven = true;
             return allWords.get(random.nextInt(allWords.size()));
         }
 
@@ -106,7 +122,10 @@ public class WordleGame {
         if (possibleWords.isEmpty()) {
             throw new NoHintAvailableException("Не удалось подобрать подсказку — проверьте введённые слова.");
         }
-        return possibleWords.get(random.nextInt(possibleWords.size()));
+        String hint = possibleWords.get(random.nextInt(possibleWords.size()));
+        hintGiven = true;
+        System.out.println("Установлен hintGiven = true, возвращаем: " + hint);
+        return hint;
     }
 
     private boolean matchesAttempt(String word, String attempt, String result) {
@@ -153,6 +172,10 @@ public class WordleGame {
 
     public int getStepsLeft() {
         return MAX_STEPS - steps;
+    }
+
+    public boolean isHintGiven() {
+        return hintGiven;
     }
 
     public void setAnswer(String answer) {

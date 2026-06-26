@@ -3,34 +3,44 @@ package ru.yandex.practicum;
 import exceptions.NoHintAvailableException;
 import exceptions.WordNotFoundInDictionaryException;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
 
 public class Wordle {
 
-    public static void main(String[] args) throws IOException {
-        WordleDictionaryLoader loader = new WordleDictionaryLoader();
-        loader.loadDictionary();
-        List<String> wordsList = loader.getList();
-        WordleDictionary dictionary = new WordleDictionary(wordsList);
-        Logger logger = new Logger("log-file.txt");
 
-        dictionary.sortWordsList();
-        dictionary.setToLowerCase();
-        dictionary.letterFilter();
+    public static void main(String[] args) {
+        Logger logger = null;
 
-        logger.log("Словарь загружен");
+        try {
+            logger = new Logger("log-file.txt");
+            WordleDictionaryLoader loader = new WordleDictionaryLoader(logger);
+            loader.loadDictionary();
+            List<String> wordsList = loader.getList();
+            WordleDictionary dictionary = new WordleDictionary(wordsList);
 
-        WordleGame wordleGame = new WordleGame(dictionary, logger);
-        logger.log("Игра запущена");
+            dictionary.sortWordsList();
+            dictionary.setToLowerCase();
+            dictionary.letterFilter();
 
-        while(wordleGame.getStepsLeft() > 0) {
-            printHint(wordleGame, logger);
+            logger.log("Словарь загружен");
+
+            WordleGame wordleGame = new WordleGame(dictionary, logger);
+            logger.log("Игра запущена");
+
+            while(wordleGame.getStepsLeft() > 0) {
+                printHint(wordleGame, logger);
+            }
+
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.log("Ошибка: " + e.getMessage());
+            } else {
+                System.err.println("Не удалось создать логгер: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
-
-        logger.close();
     }
 
     public static void printHint(WordleGame wordleGame, Logger logger) {
@@ -58,7 +68,7 @@ public class Wordle {
                 hint = wordleGame.checkWord(userInput);
                 System.out.println(hint);
             } catch (WordNotFoundInDictionaryException e) {
-                logger.log("Ошибка: " + e.getMessage());
+                logger.log(e.getMessage());
                 System.out.println("Пожалуйста, введите слово из словаря");
             }
         } else {
@@ -74,6 +84,8 @@ public class Wordle {
                 System.out.println(computerInput + "\n" + hint);
             } catch (NoHintAvailableException e) {
                 logger.log("Подсказка недоступна " + e.getMessage());
+            } catch (WordNotFoundInDictionaryException e) {
+                logger.log(e.getMessage());
             }
         }
 
